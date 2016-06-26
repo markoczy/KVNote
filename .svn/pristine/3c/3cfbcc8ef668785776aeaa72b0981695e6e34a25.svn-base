@@ -1,0 +1,21 @@
+package mkz.test;
+
+import mkz.kvnote.db.DbHandler;
+import mkz.util.io.IO;
+
+public class TestMain
+{
+	public static void main(String[] args)
+	{
+//		IO.jOut("Hello user", false);
+//		
+//		String s = IO.jIn("say a value: ",false);
+//		IO.jOut("Value is: "+s);
+		
+		DbHandler lKv = new DbHandler();
+		
+		lKv.open("vals.db");
+		
+		
+	}
+}

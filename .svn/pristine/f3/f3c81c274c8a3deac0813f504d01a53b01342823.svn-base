@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:Settings xmlns:ns2="http://www.mkz.kvnote.app/settings">
+    <file>VAR.DB</file>
+    <table>T_VALUES_N</table>
+    <app>
+        <log_level>4</log_level>
+        <auto_clipboard>true</auto_clipboard>
+        <auto_overwrite>false</auto_overwrite>
+        <wrap_text>false</wrap_text>
+        <font>
+            <font>Consolas</font>
+            <monospace>true</monospace>
+            <default_size>12</default_size>
+            <font_color>magenta</font_color>
+            <bg_color>lightgrey</bg_color>
+        </font>
+    </app>
+    <window>
+        <always_on_top>false</always_on_top>
+        <cmd_expanded>false</cmd_expanded>
+        <status_expanded>false</status_expanded>
+        <posx>-6.666666507720947</posx>
+        <posy>0.0</posy>
+        <width>1293.3333740234375</width>
+        <height>1406.6666259765625</height>
+    </window>
+</ns2:Settings>

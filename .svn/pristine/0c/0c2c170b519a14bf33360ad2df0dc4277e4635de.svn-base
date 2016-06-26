@@ -1,0 +1,133 @@
+/*============================================================
+Main Variables:
+Use these to set the layout of KVNote
+============================================================*/
+* {
+   /* Color of any UI title */
+   
+   
+   /* Color of any focused object */
+   -fx-focus-col: #550099;
+   
+   -fx-content-bg-col: #222222;
+   -fx-content-txt-col: #96ffff;
+   -fx-content-font-family: 'Consolas', monospace;
+   
+   -fx-status-bg-col: #990099;
+   -fx-status-txt-col: #990099;
+   
+   -fx-ui-border-col: #000000;
+   -fx-ui-title-col: #990099;
+   -fx-ui-title-txt-col: #000000;
+   -fx-ui-main-col: #555555;
+   -fx-ui-bg-col: #999999;
+   -fx-ui-button-col: #550099;
+   -fx-ui-button-txt-col: #dddddd;
+}
+
+/*============= ROOT =============*/
+
+.root {
+    -fx-accent: -fx-focus-col;
+    -fx-focus-color: -fx-focus-col;
+    -fx-background-color: -fx-ui-bg-col;
+}
+
+.border-pane {
+    -fx-background-color: -fx-ui-bg-col;
+}
+
+.split-pane
+{
+    -fx-background-color: -fx-ui-bg-col;
+    -fx-box-border: -fx-ui-border-col;
+}
+
+/*.split-pane:vertical > * > .content {
+   -fx-background-color: -fx-ui-title-col;
+}*/
+
+/*============= TITLED PANE =============*/
+
+.titled-pane 
+{
+    /*-fx-skin: "com.sun.javafx.scene.control.skin.TitledPaneSkin";    */
+    -fx-text-fill: -fx-ui-title-txt-col;
+}
+
+.titled-pane > .title 
+{
+    -fx-background-radius: 0 0 0 0, 0 0 0 0, 0 0 0 0;
+    -fx-background-color: -fx-ui-title-col;
+}
+
+.titled-pane > *.content 
+{
+    -fx-background-color: -fx-ui-main-col;
+    /*-fx-box-border: -fx-ui-border-col;*/
+ }
+
+/*============= TEXT AREA =============*/
+
+.text-area   {
+    -fx-text-fill: -fx-content-txt-col;
+    -fx-font-family: 'Lucida Console', monospace;
+    -fx-font-size: 12px;
+    /*-fx-border-radius: 0;*/
+    -fx-background-color: transparent, -fx-ui-border-col, -fx-focus-col, transparent;
+    -fx-background-radius: 0;
+    /*-fx-box-border: -fx-ui-border-col;*/
+    /*-fx-border-radius: 50;*/
+    /*-fx-border-width: 1;*/
+    /*-fx-border-color: black;*/
+    -fx-focus-color: -fx-focus-col;
+}
+
+.text-area .content {
+    -fx-border-color: -fx-ui-border-col;
+    /*-fx-background-radius: 0;*/
+    /*-fx-background-color: transparent, transparent, transparent, -fx-content-bg-col;*/
+    -fx-background-color: -fx-content-bg-col;
+}
+
+/*============= BUTTON =============*/
+
+.button {
+    -fx-border-color: -fx-ui-border-col;
+    -fx-background-radius: 0;
+    -fx-background-color: -fx-ui-button-col;
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-text-fill: -fx-ui-button-txt-col;
+}
+
+.button:hover {
+    -fx-background-color: #3a3a3a;
+}
+
+.button:pressed, .button:default:hover:pressed {
+  -fx-background-color: white;
+  -fx-text-fill: #1d1d1d;
+}
+
+.button:focused {
+    -fx-border-color: white, white;
+    -fx-border-width: 1, 1;
+    -fx-border-style: solid, segments(1, 1);
+    -fx-border-radius: 0, 0;
+    -fx-border-insets: 1 1 1 1, 0;
+}
+
+.button:disabled, .button:default:disabled {
+    -fx-opacity: 0.4;
+    -fx-background-color: #1d1d1d;
+    -fx-text-fill: white;
+}
+
+.button:default {
+    -fx-background-color: -fx-focus-color;
+    -fx-text-fill: #ffffff;
+}
+
+.button:default:hover {
+    -fx-background-color: derive(-fx-focus-color,30%);
+}

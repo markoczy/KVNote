@@ -1,0 +1,388 @@
+package mkz.kvnote.db;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+
+import mkz.kvnote.settings.Settings;
+import mkz.util.io.IO;
+
+public class DbHandler
+{
+	private static DbHandler instance=new DbHandler();
+
+	/** The Constant DRIVER_CLASS. */
+	private static final String DRIVER_CLASS = "org.sqlite.JDBC";
+	
+	/** The Constant CONN_PREFIX. */
+	private static final String CONN_PREFIX = "jdbc:sqlite:";
+
+	public static final String DEFAULT_DB_PATH = "vals.db";
+
+	public static final String DEFAULT_VALTABLE_NAME = "T_VALUES";
+	
+	private static final String TABLE_TOKEN = "$$TABLE$$";
+	
+	/** The member connection. */
+	private Connection mConnection = null;
+	
+	private String mTableName = Settings.DEFAULT_VALTABLE_NAME;
+	private String mPath = Settings.DEFAULT_DB_PATH;
+	
+//	private String mEncryptionKey = null;
+	
+//	private String mPath = null;
+	
+	public static DbHandler getInstance()
+	{
+		return instance;
+	}
+	
+	/**
+	 * Instantiates a new db handler.
+	 */
+	private DbHandler()
+	{
+		try
+		{
+			// Check if library exists
+			Class.forName(DRIVER_CLASS);
+		}
+		catch(Exception e)
+		{
+			IO.dbOutF("Failed to load the SQLite JDBC Driver.");
+		}
+	}
+	
+	public boolean open()
+	{
+		return open(null);
+	}
+	
+	public boolean open(String aPath)
+	{
+		return open(aPath,null);
+	}
+	
+	/**
+	 * Open.
+	 *
+	 * @param aPath the path
+	 * @return true, if successful
+	 */
+	public boolean open(String aPath, String aTableName)
+	{
+		close();
+		if(aTableName!=null) mTableName=aTableName;
+		if(aPath!=null) mPath=aPath;
+		
+		mConnection = _getDbConnection(mPath);
+		_initKvTable();
+		
+		return mConnection!=null;
+	}
+
+	/**
+	 * Close.
+	 */
+	public void close()
+	{
+		IO.tryCatch(() -> mConnection.close(), null, null);
+	}
+	
+	public boolean insertValue(String aKey, String aValue, boolean overwrie)
+	{
+		boolean rVal = true;
+		if(!overwrie)
+		{
+			if(_keyExistsKvTable(aKey))
+			{
+				IO.dbOutD("Not inserting: key "+aKey+" already exists.");
+				rVal=false;
+			}
+			else _insertKvTable(aKey, aValue);
+		}
+		else
+		{
+			if(_keyExistsKvTable(aKey))
+			{
+				IO.dbOutV("Deleting old value for key "+aKey+".");
+				_deleteKvTable(aKey);
+				_insertKvTable(aKey, aValue);
+			}
+			else _insertKvTable(aKey, aValue);
+		}
+		
+		return rVal;
+	}
+	
+	public String retreiveValue(String aKey)
+	{
+		return _getValueKvTable(aKey);
+	}
+	
+	public ArrayList<String> getKeysList(String aKeyWildcard)
+	{
+		return _getKeysKvTable(aKeyWildcard);
+	}
+	
+	public ArrayList<String> getValuesList(String aKeyWildcard)
+	{
+		return _getValuesKvTable(aKeyWildcard);
+	}
+	
+	public boolean deleteValue(String aKey)
+	{
+		return _deleteKvTable(aKey);
+	}
+	
+	public boolean valueExists(String aKey)
+	{
+		return _keyExistsKvTable(aKey);
+	}
+	
+	private ArrayList<String> _getKeysKvTable(String aKeyWildcard)
+	{
+		ArrayList<String> rVal = new ArrayList<String>();
+		
+		PreparedStatement lSql=null;
+		try
+		{
+			String lStatement = Query.KV_SELECT_KEYS.replace(TABLE_TOKEN, mTableName);
+			lSql = mConnection.prepareStatement(lStatement);
+			lSql.setString(1, aKeyWildcard);
+			ResultSet lRes=lSql.executeQuery();
+			while(lRes.next()) rVal.add(lRes.getString(1));
+		}
+		catch(Exception e)
+		{
+			IO.dbOutE(e);
+			rVal = null;
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s)->s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	private ArrayList<String> _getValuesKvTable(String aKeyWildcard)
+	{
+		ArrayList<String> rVal = new ArrayList<String>();
+		
+		PreparedStatement lSql=null;
+		try
+		{
+			String lStatement = Query.KV_SELECT_VALUES.replace(TABLE_TOKEN, mTableName);
+			lSql = mConnection.prepareStatement(lStatement);
+			lSql.setString(1, aKeyWildcard);
+			ResultSet lRes=lSql.executeQuery();
+			while(lRes.next()) rVal.add(lRes.getString(1));
+		}
+		catch(Exception e)
+		{
+			IO.dbOutE(e);
+			rVal = null;
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s)->s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	private String _getValueKvTable(String aKey)
+	{
+		String rVal = null;
+		
+		PreparedStatement lSql=null;
+		try
+		{
+			String lStatement = Query.KV_SELECT_VALUE.replace(TABLE_TOKEN, mTableName);
+			lSql = mConnection.prepareStatement(lStatement);
+			lSql.setString(1, aKey);
+			ResultSet lRes=lSql.executeQuery();
+			if(lRes.next()) rVal = lRes.getString(1);
+		}
+		catch(Exception e)
+		{
+			IO.dbOutE(e);
+			rVal = null;
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s) -> s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	
+	private boolean _keyExistsKvTable(String aKey)
+	{
+		boolean rVal = false;
+		
+		PreparedStatement lSql=null;
+		try
+		{
+			String lStatement = Query.KV_CHECK_EXISTS.replace(TABLE_TOKEN, mTableName);
+			lSql = mConnection.prepareStatement(lStatement);
+			lSql.setString(1, aKey);
+			ResultSet lRes=lSql.executeQuery();
+			if(lRes.next()) rVal=true;
+		}
+		catch(Exception e)
+		{
+			rVal=false;
+			IO.dbOutE(e);
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s)->s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	private boolean _initKvTable()
+	{
+		boolean rVal = true;
+		
+		Statement lSql=null;
+		try
+		{
+			String lStatement = Query.KV_CREATE_TABLE.replace(TABLE_TOKEN, mTableName);
+			lSql = mConnection.createStatement();
+			lSql.executeUpdate(lStatement);
+			_dbCommit();
+			IO.dbOutD("Table '"+mTableName+"' initialized.");
+		}
+		catch(Exception e)
+		{
+			rVal=false;
+			IO.dbOutE(e);
+			_dbRollback();
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s)->s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	private boolean _insertKvTable(String aKey,String aValue)
+	{
+		boolean rVal = true;
+		
+		PreparedStatement lSql=null;
+		try
+		{
+			String lStatement = Query.KV_INSERT.replace(TABLE_TOKEN, mTableName);
+			lSql = mConnection.prepareStatement(lStatement);
+			lSql.setString(1, aKey);
+			lSql.setString(2, aValue);
+			lSql.executeUpdate();
+			_dbCommit();
+		}
+		catch(Exception e)
+		{
+			rVal=false;
+			IO.dbOutE(e);
+			_dbRollback();
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s)->s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	private boolean _deleteKvTable(String aKey)
+	{
+		boolean rVal = true;
+		
+		PreparedStatement lSql=null;
+		try
+		{
+			String lStatement = Query.KV_DELETE.replace(TABLE_TOKEN, mTableName);
+			lSql = mConnection.prepareStatement(lStatement);
+			lSql.setString(1, aKey);
+			lSql.executeUpdate();
+			_dbCommit();
+		}
+		catch(Exception e)
+		{
+			rVal=false;
+			IO.dbOutE(e);
+			_dbRollback();
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s)->s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	/**
+	 * [restricted] db commit.
+	 */
+	private void _dbCommit()
+	{
+		IO.tryCatch(mConnection, (c)->c.commit(), null, null);
+	}
+	
+	/**
+	 * [restricted] db rollback.
+	 */
+	private void _dbRollback()
+	{
+		IO.tryCatch(mConnection, (c)->c.rollback(), null, null);
+	}
+	
+	/**
+	 * Creates a DB file and returns the connection item.
+	 *
+	 * @param aPath the a path
+	 * @return the connection
+	 */
+	private static Connection _getDbConnection(String aPath)
+	{
+		try
+		{
+			// Open file
+			Connection c = DriverManager.getConnection(CONN_PREFIX+aPath);
+			c.setAutoCommit(false);
+			IO.dbOutD("Connection to DB at path "+ aPath + " established.");
+			return c;
+		}
+		catch(Exception e)
+		{
+			IO.dbOutE(e);
+			return null;
+		}
+	}
+	
+	/**
+	 * The Class Query.
+	 */
+	private class Query
+	{
+		public static final String KV_CREATE_TABLE = "CREATE TABLE IF NOT EXISTS "+TABLE_TOKEN+"(key TEXT NOT NULL UNIQUE, val TEXT NOT NULL)";
+		
+		public static final String KV_DELETE = "DELETE FROM "+TABLE_TOKEN+" WHERE key=?";
+		public static final String KV_INSERT = "INSERT INTO "+TABLE_TOKEN+"(key,val) VALUES(?,?)";
+		public static final String KV_CHECK_EXISTS = "SELECT key FROM "+TABLE_TOKEN+" WHERE key = ?";
+
+		public static final String KV_SELECT_VALUE = "SELECT val FROM "+TABLE_TOKEN+" WHERE key = ?";
+		public static final String KV_SELECT_KEYS = "SELECT key FROM "+TABLE_TOKEN+" WHERE key LIKE ?";
+		public static final String KV_SELECT_VALUES = "SELECT val FROM "+TABLE_TOKEN+" WHERE key LIKE ?";
+	}
+}

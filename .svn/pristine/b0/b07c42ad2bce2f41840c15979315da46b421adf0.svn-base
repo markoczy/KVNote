@@ -1,0 +1,163 @@
+package mkz.kvnote.parser;
+
+import java.util.ArrayList;
+
+import mkz.kvnote.db.DbHandler;
+import mkz.util.io.IO;
+import mkz.util.jcli.Parser;
+import mkz.util.jcli.definition.IExecutable;
+
+public class KVParser extends Parser<ArrayList<String>>
+{
+	private static final DbHandler kv = DbHandler.getInstance();
+	
+//	public static KVParser getInstance()
+//	{
+//		return instance;
+//	}
+//	
+	public KVParser()
+	{
+		super();
+		super.addCommand("(s|set|insert)", SET);
+		super.addCommand("(g|get|retreive)", GET);
+		super.addCommand("(d|del|delete)", DELETE);
+		super.addCommand("(e|exists)", EXISTS);
+		super.addCommand("(lk|list|listkeys|list_keys)", LIST_KEYS);
+		super.addCommand("(lv|listvalues|list_values)", LIST_VALUES);
+		super.addCommand("\\S*", NOP);
+	}
+	
+	
+	public static final class Status
+	{
+		public static final String OK_SET = "OK#INSERTED";
+		public static final String OK_DELETE = "OK#DELETED";
+		public static final String OK_EXISTS = "OK#EXISTS";
+		public static final String OK_NEXISTS = "OK#NEXISTS";
+		public static final String NOK_LIST_KEYS = "NOK#LIST_KEYS";
+		public static final String NOK_LIST_VALUES = "NOK#LIST_VALUES";
+		public static final String NOK_BAD_ARGS_COUNT = "NOK#BAD_ARGUMENT_COUNT";
+		public static final String NOK_CMD_NOT_FOUND = "NOK#CMD_NOT_FOUND";
+		public static final String NOK_SET = "OK#FAILED_SET";
+		public static final String NOK_GET = "NOK#FAILED_GET";
+		public static final String NOK_DELETE = "OK#FAILED_DELETE";
+	} 
+	
+	private static final IExecutable<ArrayList<String>> SET = (arr)->
+	{
+		IO.dbOutD("SET called.");
+		if(arr.length>=3)
+		{
+			for(int iStr=3;iStr<arr.length;iStr++) arr[2]+=" "+arr[iStr];
+			if(kv.insertValue(arr[1], arr[2], false)) return getSingleMessage(Status.OK_SET);
+			else return getSingleMessage(Status.NOK_SET);
+		}
+		else
+		{
+			return getSingleMessage(Status.NOK_BAD_ARGS_COUNT);
+		}
+	};
+	
+
+	private static final IExecutable<ArrayList<String>> GET = (arr)->
+	{
+		IO.dbOutD("GET called.");
+		if(arr.length==2)
+		{
+			String lVal = kv.retreiveValue(arr[1]);
+			if(lVal!=null) return getSingleMessage(lVal);
+			else return getSingleMessage(Status.NOK_GET);
+		}
+		else
+		{
+			return getSingleMessage(Status.NOK_BAD_ARGS_COUNT);
+		}
+	};
+	
+	private static final IExecutable<ArrayList<String>> EXISTS = (arr)->
+	{
+		IO.dbOutD("EXISTS called.");
+		if(arr.length==2)
+		{
+			if(kv.valueExists(arr[1])) return getSingleMessage(Status.OK_EXISTS);
+			else return getSingleMessage(Status.OK_NEXISTS);
+		}
+		else
+		{
+			return getSingleMessage(Status.NOK_BAD_ARGS_COUNT);
+		}
+	};
+	
+	
+	private static final IExecutable<ArrayList<String>> DELETE = (arr)->
+	{
+		IO.dbOutD("DELETE called.");
+		if(arr.length==2)
+		{
+			if(kv.deleteValue(arr[1])) return getSingleMessage(Status.OK_DELETE);
+			else return getSingleMessage(Status.NOK_DELETE);
+		}
+		else
+		{
+			return getSingleMessage(Status.NOK_BAD_ARGS_COUNT);
+		}
+	};
+	
+
+	private static final IExecutable<ArrayList<String>> LIST_KEYS = (arr)->
+	{
+		IO.dbOutD("LIST_KEYS called.");
+		
+		if(arr.length==1)
+		{
+			ArrayList<String> rVal = kv.getKeysList("%");
+			if(rVal!=null) return rVal;
+			else return getSingleMessage(Status.NOK_LIST_KEYS);
+		}
+		else if(arr.length==2)
+		{
+			ArrayList<String> rVal = kv.getKeysList(arr[1]);
+			if(rVal!=null) return rVal;
+			else return getSingleMessage(Status.NOK_LIST_KEYS);
+		}
+		else
+		{
+			return getSingleMessage(Status.NOK_BAD_ARGS_COUNT);
+		}
+	};
+	
+	private static final IExecutable<ArrayList<String>> LIST_VALUES = (arr)->
+	{
+		IO.dbOutD("LIST_VALUES called.");
+ 		
+		if(arr.length==1)
+		{
+			ArrayList<String> rVal = kv.getValuesList("%");
+			if(rVal!=null) return rVal;
+			else return getSingleMessage(Status.NOK_LIST_VALUES);
+		}
+		else if(arr.length==2)
+		{
+ 			ArrayList<String> rVal = kv.getValuesList(arr[1]);
+			if(rVal!=null) return rVal;
+			else return getSingleMessage(Status.NOK_LIST_VALUES);
+		}
+		else
+		{
+			return getSingleMessage(Status.NOK_BAD_ARGS_COUNT);
+		}
+	};
+	
+	private static final IExecutable<ArrayList<String>> NOP = (arr)->
+	{
+		return getSingleMessage(Status.NOK_CMD_NOT_FOUND);
+	};
+	
+	private static ArrayList<String> getSingleMessage(String aValue)
+	{
+		ArrayList<String> rVal = new ArrayList<String>();
+		rVal.add(aValue);
+		return rVal;
+	}
+}

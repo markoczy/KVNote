@@ -1,0 +1,27 @@
+package mkz.test;
+
+import mkz.kvnote.db.DbHandler;
+import mkz.util.io.IO;
+
+public class TestMain
+{
+	public static void main(String[] args)
+	{
+//		IO.jOut("Hello user", false);
+//		
+//		String s = IO.jIn("say a value: ",false);
+//		IO.jOut("Value is: "+s);
+		
+		DbHandler lKv = new DbHandler();
+		lKv.open("vals.db","T_VALUES2"); 
+		
+		
+		String lPref="0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+		for(int i=0;i<10;i++)
+		{
+			lKv.insertValue("test"+i, lPref+i, true);
+		}
+		
+		for(String iStr:lKv.getValuesList("test%")) IO.jOut(iStr);
+	}
+}

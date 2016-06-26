@@ -38,6 +38,8 @@
                                         <MenuItem fx:id="miOutputToClipboard" mnemonicParsing="false" onAction="#miOutputToClipboard_Action" text="&gt; Clipboard" />
                                           <MenuItem fx:id="miOutputFromClipboard" mnemonicParsing="false" onAction="#miOutputFromClipboard_Action" text="&lt; Clipboard" />
                                           <SeparatorMenuItem mnemonicParsing="false" />
+                                          <MenuItem fx:id="miOutputToNotepad" mnemonicParsing="false" onAction="#miOutputToNotepad_Action" text="&gt; Notepad" />
+                                          <SeparatorMenuItem mnemonicParsing="false" />
                                           <CheckMenuItem fx:id="cmiOutputAOT" mnemonicParsing="false" onAction="#cmiOutputAOT_Action" text="Always On Top" />
                                           <CheckMenuItem fx:id="cmiOutputWrapText" mnemonicParsing="false" onAction="#cmiOutputWrapText_Action" text="Wrap Text" />
                                           <CheckMenuItem fx:id="cmiOutputACB" mnemonicParsing="false" onAction="#cmiOutputACB_Action" text="Auto Clipboard" />

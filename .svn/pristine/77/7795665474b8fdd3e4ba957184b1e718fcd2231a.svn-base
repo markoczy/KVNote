@@ -1,0 +1,515 @@
+package mkz.kvnote.ui.panels;
+
+import java.util.Optional;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.TitledPane;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.Stage;
+import mkz.kvnote.KVNote;
+import mkz.kvnote.db.DbHandler;
+import mkz.kvnote.settings.Settings;
+import mkz.util.io.IO;
+
+public class GMainPanelController
+{
+	
+	@FXML
+	private Label lblFileName;
+
+	@FXML
+	private Label lblTableName;
+
+	@FXML
+	private TitledPane tpCommand;
+
+	@FXML
+	private Label lblTableNameStr;
+
+	@FXML
+	private ListView<String> lvwSearchResult;
+
+	@FXML
+	private CheckMenuItem cmiOutputAOT;
+
+	@FXML
+	private TextField tfdSearchInput;
+
+	@FXML
+	private TextArea taaStatusConsole;
+
+	@FXML
+	private Label lblCmdTxt;
+
+	@FXML
+	private BorderPane bpRoot;
+
+	@FXML
+	private CheckMenuItem cmiOutputACB;
+
+	@FXML
+	private Label lblKeyStr;
+
+	@FXML
+	private Button btnToDb;
+
+	@FXML
+	private MenuItem miOutputToClipboard;
+
+	@FXML
+	private TitledPane tpOutput;
+
+	@FXML
+	private TextField tfdCommand;
+
+	@FXML
+	private Button btnSearchInput;
+
+	@FXML
+	private MenuItem miVarsToClipboard;
+
+	@FXML
+	private TextField mitfdVarsSetTable;
+
+	@FXML
+	private MenuItem miOutputFromClipboard;
+
+	@FXML
+	private TextArea taaOutput;
+
+	@FXML
+	private TextField tfdKey;
+
+	@FXML
+	private Button btnDeleteDb;
+
+	@FXML
+	private CheckMenuItem cmiVarsACB;
+
+	@FXML
+	private TitledPane tpStatus;
+
+	@FXML
+	private MenuItem miVarsFromClipboard;
+
+	@FXML
+	private Button btnToOutput;
+
+	@FXML
+	private CheckMenuItem cmiVarsAOT;
+
+	@FXML
+	void tfdKey_KeyPress(KeyEvent event)
+	{
+		if(event.getCode()==KeyCode.ENTER)
+		{
+			IO.dbOutD("Enter pressed.");
+			_updateDbContent();
+		}
+	}
+	
+
+	@FXML
+	void tfdCommand_KeyPress(KeyEvent event)
+	{
+		if(event.getCode()==KeyCode.ENTER)
+		{
+			IO.dbOutD("Enter pressed.");
+			
+		}
+	}
+
+	@FXML
+	void taaOutput_KeyPressed(KeyEvent event)
+	{
+		if(event.isControlDown() && event.getCode()==KeyCode.S)
+		{
+			IO.dbOutD("Ctrl+S pressed.");
+			_updateDbContent();
+		}
+	}
+
+	@FXML
+	void miOutputToClipboard_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		_contentToClipboard();
+	}
+
+	@FXML
+	void miOutputFromClipboard_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		_contentFromClipboard();
+	}
+
+	@FXML
+	void cmiOutputAOT_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		mSettings.window.always_on_top=cmiOutputAOT.selectedProperty().get();
+		_updateAlwaysOnTop(true);
+	}
+
+	@FXML
+	void cmiOutputACB_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		mSettings.app.auto_clipboard=cmiOutputACB.selectedProperty().get();
+		_updateAutoClipboard(true);
+	}
+
+	@FXML
+	void tfdSearchInput_KeyPress(KeyEvent event)
+	{
+//		IO.dbOutD("Code is: "+event.getCode());
+		
+		if(event.getCode()==KeyCode.ENTER)
+		{
+			IO.dbOutD("Enter pressed.");
+			_updateKeysTable();
+			
+		}
+	}
+
+	@FXML
+    void lvwSearchResult_Clicked(MouseEvent event) 
+	{
+//		IO.dbOutD("Action started.");
+		if (event.getClickCount() == 2) 
+		{
+//			mCurrentKey = lvwSearchResult.getSelectionModel().getSelectedItem();
+			IO.dbOutD("Double clicked, key is: "+mCurrentKey);
+			_updateKeyContent();
+	    }
+    }
+	
+
+	@FXML
+	void btnSearchInput_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		_updateKeysTable();
+	}
+
+	@FXML
+	void btnToOutput_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		_updateKeyContent();
+	}
+
+	@FXML
+	void btnToDb_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		_updateDbContent();
+	}
+
+	@FXML
+	void btnDeleteDb_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		_deleteFromDb();
+	}
+
+	@FXML
+	void miVarsToClipboard_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+
+	}
+
+	@FXML
+	void miVarsFromClipboard_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+
+	}
+
+	@FXML
+	void cmiVarsAOT_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		mSettings.window.always_on_top=cmiVarsAOT.selectedProperty().get();
+		_updateAlwaysOnTop(true);
+		_safeSettings();
+	}
+
+	@FXML
+	void cmiVarsACB_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+		mSettings.app.auto_clipboard=cmiVarsACB.selectedProperty().get();
+		_updateAutoClipboard(true);
+		
+	}
+
+	@FXML
+	void mitfdVarsSetTable_Action(ActionEvent event)
+	{
+		IO.dbOutD("Action started.");
+
+	}
+
+	private Settings mSettings=null;
+	private Stage mProgramStage = null;
+	private String mCurrentKey = null;
+	
+	private static final DbHandler KV = DbHandler.getInstance();
+	private static final Clipboard CLIPBOARD = Clipboard.getSystemClipboard();
+	
+	public void init(Settings aSettings, Stage aProgramStage)
+	{
+		//
+		// Copy references
+		//
+		
+		mSettings=aSettings;
+		mProgramStage=aProgramStage;
+		
+		//
+		// Init Engine
+		//
+		
+		KV.open(mSettings.file, mSettings.table);
+		
+		//
+		// Add listeners
+		//
+		
+		tpCommand.expandedProperty().addListener((obsv,ov,nv)->
+		{
+//			IO.dbOutD("tpCommand Expand listener triggered.");
+			if(nv!=null)
+			{
+				mSettings.window.cmd_expanded=nv;
+				_safeSettings();
+			}
+		});
+		
+		tpStatus.expandedProperty().addListener((obsv,ov,nv)->
+		{
+//			IO.dbOutD("tpStatus Expand listener triggered.");
+			 if(nv!=null)
+			 {
+				 mSettings.window.status_expanded=nv;
+				 IO.dbOutD("New value: "+mSettings.window.status_expanded);
+				 _safeSettings();
+			 }
+		});
+		
+		
+		_updateSettings();
+		
+	}
+	
+	private void _updateSettings()
+	{
+		_updateAutoClipboard(false);
+		_updateAlwaysOnTop(false);
+		_updateKeysTable();
+		_updateFileName(false);
+		_updateTableName(false);
+		_updateCommandExpanded(false);
+		_updateStatusExpanded(false);
+//		_safeSettings();
+	}
+	
+	private void _contentToClipboard()
+	{
+		final ClipboardContent content = new ClipboardContent();
+		content.putString(taaOutput.getText());
+		CLIPBOARD.setContent(content);
+	}
+	
+	private void _contentFromClipboard()
+	{
+		final String lContent = (String) CLIPBOARD.getContent(DataFormat.PLAIN_TEXT);
+		taaOutput.setText(lContent);
+	}
+	
+	private void _updateCommandExpanded(boolean safe)
+	{
+		tpCommand.setExpanded(false);
+//		tpCommand.setExpanded(mSettings.window.cmd_expanded);
+		if(safe) _safeSettings();
+	}
+	
+	private void _updateStatusExpanded(boolean safe)
+	{
+		tpStatus.setExpanded(false);
+//		tpStatus.setExpanded(mSettings.window.status_expanded);
+		if(safe) _safeSettings();
+	}
+	
+	private void _updateFileName(boolean safe)
+	{
+		lblFileName.setText(mSettings.file);
+		if(safe) _safeSettings();
+	}
+	
+	private void _updateTableName(boolean safe)
+	{
+		lblTableName.setText(mSettings.table);
+		if(safe) _safeSettings();
+	}
+	
+	private void _updateAutoClipboard(boolean safe)
+	{
+		cmiOutputACB.selectedProperty().set(mSettings.app.auto_clipboard);
+		cmiVarsACB.selectedProperty().set(mSettings.app.auto_clipboard);
+		if(safe) _safeSettings();
+	}
+	
+	private void _updateAlwaysOnTop(boolean safe)
+	{
+		cmiOutputAOT.selectedProperty().set(mSettings.window.always_on_top);
+		cmiVarsAOT.selectedProperty().set(mSettings.window.always_on_top);
+		mProgramStage.setAlwaysOnTop(mSettings.window.always_on_top);
+		if(safe) _safeSettings();
+	}
+	
+	private void _updateKeysTable()
+	{
+		String lValue=tfdSearchInput.getText();
+//		IO.dbOutD("lValue = "+lValue);
+		ObservableList<String> lKeys = FXCollections.observableArrayList(KV.getKeysList("%"+lValue+"%"));
+		lvwSearchResult.setItems(lKeys);
+	}
+	
+	private void _updateKeyContent()
+	{
+		mCurrentKey=lvwSearchResult.getSelectionModel().getSelectedItem();
+		if(mCurrentKey!=null && !mCurrentKey.equals(""))
+		{
+			String lContent = KV.retreiveValue(mCurrentKey);
+			tfdKey.setText(mCurrentKey);
+			taaOutput.setText(lContent);
+		}
+		else IO.dbOutD("Not loading: No key selected.");
+	}
+	
+	private void _updateDbContent()
+	{
+		mCurrentKey=tfdKey.getText();
+		if(mCurrentKey==null || mCurrentKey.equals("")) _requestKey();
+		if(mCurrentKey==null || mCurrentKey.equals(""))
+		{
+			IO.dbOutD("Process aborted: No key specified.");
+			return;
+		}
+		
+		boolean lAllowInsert=true;
+		if(!mSettings.app.auto_overwrite)
+		{
+			if(KV.valueExists(mCurrentKey))
+			{
+				lAllowInsert=_requestYesNo("Key already exists", "Really overwrite key with name '"+mCurrentKey+"'?");
+				if(!lAllowInsert) IO.dbOutD("Insert aborted by user.");
+			}
+		}
+		if(lAllowInsert)
+		{
+			IO.dbOutD("Inserting new value for key "+mCurrentKey);
+			if(KV.insertValue(mCurrentKey, taaOutput.getText(), true)) 
+			{
+//				_resetContent();
+				_updateKeysTable();
+			}
+		}
+	}
+	
+	private void _deleteFromDb()
+	{
+		mCurrentKey = lvwSearchResult.getSelectionModel().getSelectedItem();
+		
+		if(_requestYesNo("Confirmation", "Really delete key with name '"+mCurrentKey+"'?")) 
+		{
+			if(KV.deleteValue(mCurrentKey)) _updateKeysTable();
+		}
+		else IO.dbOutD("Delete aborted by user.");
+	}
+	
+	private void _resetContent()
+	{
+		taaOutput.setText("");
+		tfdKey.setText("");
+	}
+	
+//	private void _resetKey()
+//	{
+//		taaOutput.setText("");
+//	}
+	
+//	private void _initKeysTable()
+//	{
+//		ObservableList<String> lKeys =FXCollections.observableArrayList(KV.getKeysList("%"));
+//		lvwSearchResult.setItems(lKeys);
+//	}
+	
+	private void _safeSettings()
+	{
+		Settings.safeToFile(mSettings, KVNote.DEFAULT_CFG_PATH);
+	}
+	
+	private boolean _requestYesNo(String aTitle, String aText)
+	{
+		mProgramStage.setAlwaysOnTop(false);
+		Alert alert = new Alert(AlertType.CONFIRMATION);
+		alert.setTitle(aTitle);
+		alert.setHeaderText(null);
+		alert.setContentText(aText);
+
+	    Button yesButton = (Button) alert.getDialogPane().lookupButton( ButtonType.OK );
+	    yesButton.setDefaultButton(false);
+	    yesButton.setText("_"+yesButton.getText());
+
+	    Button noButton = (Button) alert.getDialogPane().lookupButton( ButtonType.CANCEL );
+	    noButton.setDefaultButton(true);
+	    noButton.setText("_"+noButton.getText());
+		
+		Optional<ButtonType> result = alert.showAndWait();
+		
+		mProgramStage.setAlwaysOnTop(mSettings.window.always_on_top);
+		return result.get() == ButtonType.OK;
+	}
+	
+	private void _requestKey()
+	{
+		mProgramStage.setAlwaysOnTop(false);
+		TextInputDialog dialog = new TextInputDialog("");
+		dialog.setTitle("No key specified");
+		dialog.setHeaderText(null);
+		dialog.setContentText("Please enter a key name:");
+
+		Optional<String> result = dialog.showAndWait();
+		result.ifPresent(name ->
+		{
+			mCurrentKey=result.get();
+			IO.dbOutD("User entered key: "+mCurrentKey);
+		});
+		mProgramStage.setAlwaysOnTop(mSettings.window.always_on_top);
+	}
+	
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:Settings xmlns:ns2="http://www.mkz.kvnote.app/settings">
+    <file>C:\test.db</file>
+    <table>T_VALUES_X</table>
+    <window>
+        <always_on_top>true</always_on_top>
+        <cmd_expanded>true</cmd_expanded>
+        <status_expanded>true</status_expanded>
+    </window>
+    <app>
+        <log_level>4</log_level>
+        <auto_clipboard>true</auto_clipboard>
+        <auto_overwrite>false</auto_overwrite>
+        <wrap_text>true</wrap_text>
+        <font>
+            <font>Consolas</font>
+            <monospace>true</monospace>
+            <default_size>12</default_size>
+        </font>
+    </app>
+</ns2:Settings>

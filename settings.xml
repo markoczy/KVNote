@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:Settings xmlns:ns2="http://www.mkz.kvnote.app/settings">
+    <file>vals.db</file>
+    <table>T_VALUES</table>
+    <window>
+        <always_on_top>true</always_on_top>
+        <cmd_expanded>false</cmd_expanded>
+        <status_expanded>false</status_expanded>
+    </window>
+    <app>
+        <auto_clipboard>false</auto_clipboard>
+        <auto_overwrite>false</auto_overwrite>
+        <wrap_text>true</wrap_text>
+    </app>
+</ns2:Settings>

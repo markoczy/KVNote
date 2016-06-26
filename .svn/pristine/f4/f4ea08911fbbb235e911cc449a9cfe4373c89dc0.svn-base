@@ -1,0 +1,207 @@
+package mkz.kvnote.db;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+
+import mkz.util.file.FileHandler;
+import mkz.util.io.IO;
+
+public class DbHandler
+{
+
+	/** The Constant DRIVER_CLASS. */
+	private static final String DRIVER_CLASS = "org.sqlite.JDBC";
+	
+	/** The Constant CONN_PREFIX. */
+	private static final String CONN_PREFIX = "jdbc:sqlite:";
+
+	private static final String DEFAULT_VALTABLE_NAME = "T_VALUES";
+	
+	private static final String TABLE_TOKEN = "$$TABLE$$";
+	
+	
+	/** The m connection. */
+	private Connection mConnection = null;
+	
+//	private String mEncryptionKey = null;
+	
+//	private String mPath = null;
+	
+	/**
+	 * Instantiates a new db handler.
+	 */
+	public DbHandler()
+	{
+		try
+		{
+			// Check if library exists
+			Class.forName(DRIVER_CLASS);
+		}
+		catch(Exception e)
+		{
+			IO.dbOutF("Failed to load the SQLite JDBC Driver.");
+		}
+	}
+	
+	/**
+	 * Open.
+	 *
+	 * @param path the path
+	 * @return true, if successful
+	 */
+	public boolean open(String path, String aTableName)
+	{
+		boolean rVal=true;
+		try
+		{
+			mConnection = _getDbConnection(path);
+		}
+		catch(Exception e)
+		{
+			IO.dbOutE(e);
+			rVal=false;
+		}
+		
+		return rVal && mConnection!=null;
+	}
+	
+	/**
+	 * Close.
+	 */
+	public void close()
+	{
+		IO.tryCatch(mConnection,(c) -> c.close(), null, null);
+	}
+	
+	private boolean _initKvTable(String aTableName)
+	{
+		boolean rVal = true;
+		
+		Statement lSql=null;
+		try
+		{
+			String lTabName=(aTableName!=null ? aTableName : DEFAULT_VALTABLE_NAME);
+			String lStatement = Query.CREATE_KV_TABLE.replace(TABLE_TOKEN, lTabName);
+			
+			lSql = mConnection.createStatement();
+			lSql.executeUpdate(lStatement);
+			_dbCommit();
+		}
+		catch(Exception e)
+		{
+			rVal=false;
+			IO.dbOutE(e);
+			_dbRollback();
+		}
+		finally
+		{
+			IO.tryCatch(lSql, (s)->s.close(), null, null);
+		}
+		
+		return rVal;
+	}
+	
+	/**
+	 * [restricted] db commit.
+	 */
+	private void _dbCommit()
+	{
+		IO.tryCatch(mConnection, (c)->c.commit(), null, null);
+	}
+	
+	/**
+	 * [restricted] db rollback.
+	 */
+	private void _dbRollback()
+	{
+		IO.tryCatch(mConnection, (c)->c.rollback(), null, null);
+	}
+	
+	/**
+	 * Creates a DB file and returns the connection item.
+	 *
+	 * @param aPath the a path
+	 * @return the connection
+	 */
+	private Connection _getDbConnection(String aPath)
+	{
+		try
+		{
+			boolean lFileExists=FileHandler.fileExists(aPath);
+			
+			// Open file
+			Connection c = DriverManager.getConnection(CONN_PREFIX+aPath);
+			c.setAutoCommit(false);
+			
+			// Init Table
+			if(!lFileExists) _initKvTable(null); // TODO add table name
+			IO.dbOutD("Connection to DB at path "+ aPath + " established.");
+			
+			
+			return c;
+		}
+		catch(Exception e)
+		{
+			IO.dbOutE(e);
+			return null;
+		}
+	}
+	
+	/**
+	 * The Class Query.
+	 */
+	private class Query
+	{
+		public static final String CREATE_KV_TABLE = "CREATE TABLE "+TABLE_TOKEN+"(property TEXT NOT NULL UNIQUE, value TEXT NOT NULL, description TEXT)";
+		
+		
+		/** The Constant CREATE_LOCKER_CFGTABLE. */
+		// Create table
+		public static final String CREATE_LOCKER_CFGTABLE = "CREATE TABLE locker_config(property TEXT NOT NULL UNIQUE, value TEXT NOT NULL, description TEXT)";
+		
+		/** The Constant INSERT_LOCKER_CFGTABLE. */
+		// Insert row
+		public static final String INSERT_LOCKER_CFGTABLE = "INSERT INTO locker_config(property,value,description) VALUES(?,?,?)";
+		
+		/** The Constant SELECT_LOCKER_CFGTABLE. */
+		// Select a row by property name
+		public static final String SELECT_LOCKER_CFGTABLE = "SELECT value FROM locker_config WHERE property = ?";
+		
+		/** The Constant CREATE_LOCKER_FILETABLE. */
+		// Create table
+		public static final String CREATE_LOCKER_FILETABLE = "CREATE TABLE locker_files(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE, description TEXT)";
+		
+		/** The Constant INSERT_LOCKER_FILETABLE. */
+		// Insert row
+		public static final String INSERT_LOCKER_FILETABLE = "INSERT INTO locker_files(name,description) VALUES (?,?)";
+		
+		/** The Constant SELECT_LOCKER_FILETABLE. */
+		// Select a row by name
+		public static final String SELECT_LOCKER_FILETABLE = "SELECT * FROM locker_files WHERE name = ?";
+		
+		/** The Constant SELECT_LOCKER_FILETABLE_NAMES. */
+		// Select column 'name' (alphabetical order)
+		public static final String SELECT_LOCKER_FILETABLE_NAMES = "SELECT name FROM locker_files ORDER BY name ASC";
+		
+		/** The Constant DELETE_LOCKER_FILETABLE. */
+		// Delete row
+		public static final String DELETE_LOCKER_FILETABLE = "DELETE FROM locker_files WHERE name = ?";
+		
+		/** The Constant CREATE_LOCKER_DATATABLE. */
+		// Create table
+		public static final String CREATE_LOCKER_DATATABLE = "CREATE TABLE locker_data(id INTEGER, pos INTEGER, data TEXT)";
+		
+		/** The Constant INSERT_LOCKER_DATATABLE. */
+		// Insert row
+		public static final String INSERT_LOCKER_DATATABLE = "INSERT INTO locker_data(id,pos,data) VALUES (?,?,?)";
+		
+		/** The Constant SELECT_LOCKER_DATATABLE. */
+		// Select multiple rows by file id
+		public static final String SELECT_LOCKER_DATATABLE = "SELECT data FROM locker_data WHERE id = ? ORDER BY pos ASC";
+		
+		/** The Constant DELETE_LOCKER_DATATABLE. */
+		// Delete multiple rows by file id
+		public static final String DELETE_LOCKER_DATATABLE = "DELETE FROM locker_data WHERE id = ?";
+	}
+}
